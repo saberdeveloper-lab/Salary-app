@@ -1,6 +1,7 @@
+
 import os
 from flask import Flask, render_template, request, redirect, url_for, session, flash
-import pandas as pd
+import openpyxl
 
 app = Flask(__name__)
 app.secret_key = 'teacher-salary-secret-key-12345'
@@ -12,7 +13,6 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# ÊäÙíã ÑãÒ Çæáíå ÇÑ æÌæÏ äÏÇÔÊ
 if not os.path.exists(PASS_FILE):
     with open(PASS_FILE, 'w') as f:
         f.write('Saber456519')
@@ -35,36 +35,44 @@ def index():
         excel_path = get_excel_path()
         
         if not os.path.exists(excel_path):
-            error = "åäæÒ İÇíá ÇØáÇÚÇÊ ÊæÓØ ãÏíÑíÊ ÈÇÑĞÇÑí äÔÏå ÇÓÊ."
+            error = "Ù‡Ù†ÙˆØ² ÙØ§ÛŒÙ„ Ø§Ø·Ù„Ø§Ø¹Ø§Øª ØªÙˆØ³Ø· Ù…Ø¯ÛŒØ±ÛŒØª Ø¨Ø§Ø±Ú¯Ø°Ø§Ø±ÛŒ Ù†Ø´Ø¯Ù‡ Ø§Ø³Øª."
         elif not search_code:
-            error = "áØİÇğ ˜Ï ÑÓäáí ÑÇ æÇÑÏ ˜äíÏ."
+            error = "Ù„Ø·ÙØ§Ù‹ Ú©Ø¯ Ù¾Ø±Ø³Ù†Ù„ÛŒ Ø±Ø§ ÙˆØ§Ø±Ø¯ Ú©Ù†ÛŒØ¯."
         else:
             try:
-                df = pd.read_excel(excel_path)
-                # Ç˜ÓÇÒí äÇã ÓÊæäåÇ ÇÒ İÇÕáååÇí ÇÖÇİí ÇÍÊãÇáí
-                df.columns = df.columns.str.strip()
+                wb = openpyxl.load_workbook(excel_path, data_only=True)
+                sheet = wb.active
                 
-                if '˜Ï ÑÓäáí' not in df.columns:
-                    error = "ÓÊæä '˜Ï ÑÓäáí' ÏÑ İÇíá Ç˜Óá íÇİÊ äÔÏ. áØİÇğ İÇíá ÑÇ ÈÑÑÓí ˜äíÏ."
+                # Ø®ÙˆØ§Ù†Ø¯Ù† Ø³Ø±Ø³ØªÙˆÙ†â€ŒÙ‡Ø§
+                headers = [str(cell.value).strip() if cell.value is not None else '' for cell in sheet[1]]
+                
+                if 'Ú©Ø¯ Ù¾Ø±Ø³Ù†Ù„ÛŒ' not in headers:
+                    error = "Ø³ØªÙˆÙ† 'Ú©Ø¯ Ù¾Ø±Ø³Ù†Ù„ÛŒ' Ø¯Ø± ÙØ§ÛŒÙ„ Ø§Ú©Ø³Ù„ ÛŒØ§ÙØª Ù†Ø´Ø¯."
                 else:
-                    df['˜Ï ÑÓäáí'] = df['˜Ï ÑÓäáí'].astype(str).str.strip()
-                    row = df[df['˜Ï ÑÓäáí'] == search_code]
-                    
-                    if row.empty:
-                        error = "˜Ï ÑÓäáí ãæÑÏ äÙÑ íÇİÊ äÔÏ."
-                    else:
-                        r = row.iloc[0].to_dict()
-                        result = {
-                            'äÇã': r.get('äÇã', 'äÇãÔÎÕ'),
-                            'äÇã_ÎÇäæÇÏí': r.get('äÇã ÎÇäæÇÏí', 'äÇãÔÎÕ'),
-                            'ÓÇÚÊ_ãÍÇÓÈå_ÔÏå': r.get('ÓÇÚÊ ãÍÇÓÈå ÔÏå', 'äÇãÔÎÕ'),
-                            'ÓÇÚÊ_ãÇåÇäå': r.get('ÓÇÚÊ ãÇåÇäå ÍŞ ÇáÊÏÑíÓ', 'äÇãÔÎÕ'),
-                            'äÑÎ': r.get('äÑÎ ÍŞ ÇáÊÏÑíÓ', 'äÇãÔÎÕ'),
-                            'ãŞÏÇÑ': r.get('ãŞÏÇÑ ÍŞ ÇáÊÏÑíÓ', 'äÇãÔÎÕ'),
-                            'ÎÇáÕ': r.get('ÎÇáÕ ÑÏÇÎÊí', 'äÇãÔÎÕ')
-                        }
+                    found = False
+                    for row in sheet.iter_rows(min_row=2, values_only=True):
+                        row_dict = {headers[i]: (row[i] if i < len(row) and row[i] is not None else '') for i in range(len(headers))}
+                        current_code = str(row_dict.get('Ú©Ø¯ Ù¾Ø±Ø³Ù†Ù„ÛŒ', '')).strip()
+                        # Ø­Ø°Ù Ø§Ø¹Ø´Ø§Ø± Ø§Ø­ØªÙ…Ø§Ù„ÛŒ Ø§Ø² Ú©Ø¯Ù‡Ø§ÛŒ Ø¹Ø¯Ø¯ÛŒ
+                        if current_code.endswith('.0'):
+                            current_code = current_code[:-2]
+                            
+                        if current_code == search_code:
+                            result = {
+                                'Ù†Ø§Ù…': row_dict.get('Ù†Ø§Ù…', 'Ù†Ø§Ù…Ø´Ø®Øµ'),
+                                'Ù†Ø§Ù…_Ø®Ø§Ù†ÙˆØ§Ø¯Ú¯ÛŒ': row_dict.get('Ù†Ø§Ù… Ø®Ø§Ù†ÙˆØ§Ø¯Ú¯ÛŒ', 'Ù†Ø§Ù…Ø´Ø®Øµ'),
+                                'Ø³Ø§Ø¹Øª_Ù…Ø­Ø§Ø³Ø¨Ù‡_Ø´Ø¯Ù‡': row_dict.get('Ø³Ø§Ø¹Øª Ù…Ø­Ø§Ø³Ø¨Ù‡ Ø´Ø¯Ù‡', 'Ù†Ø§Ù…Ø´Ø®Øµ'),
+                                'Ø³Ø§Ø¹Øª_Ù…Ø§Ù‡Ø§Ù†Ù‡': row_dict.get('Ø³Ø§Ø¹Øª Ù…Ø§Ù‡Ø§Ù†Ù‡ Ø­Ù‚ Ø§Ù„ØªØ¯Ø±ÛŒØ³', 'Ù†Ø§Ù…Ø´Ø®Øµ'),
+                                'Ù†Ø±Ø®': row_dict.get('Ù†Ø±Ø® Ø­Ù‚ Ø§Ù„ØªØ¯Ø±ÛŒØ³', 'Ù†Ø§Ù…Ø´Ø®Øµ'),
+                                'Ù…Ù‚Ø¯Ø§Ø±': row_dict.get('Ù…Ù‚Ø¯Ø§Ø± Ø­Ù‚ Ø§Ù„ØªØ¯Ø±ÛŒØ³', 'Ù†Ø§Ù…Ø´Ø®Øµ'),
+                                'Ø®Ø§Ù„Øµ': row_dict.get('Ø®Ø§Ù„Øµ Ù¾Ø±Ø¯Ø§Ø®ØªÛŒ', 'Ù†Ø§Ù…Ø´Ø®Øµ')
+                            }
+                            found = True
+                            break
+                    if not found:
+                        error = "Ú©Ø¯ Ù¾Ø±Ø³Ù†Ù„ÛŒ Ù…ÙˆØ±Ø¯ Ù†Ø¸Ø± ÛŒØ§ÙØª Ù†Ø´Ø¯."
             except Exception as e:
-                error = f"ÎØÇ ÏÑ ÑÏÇÒÔ İÇíá: {str(e)}"
+                error = f"Ø®Ø·Ø§ Ø¯Ø± Ù¾Ø±Ø¯Ø§Ø²Ø´ ÙØ§ÛŒÙ„: {str(e)}"
                 
     return render_template('index.html', result=result, error=error, search_code=search_code)
 
@@ -76,7 +84,7 @@ def admin_login():
             session['admin_logged'] = True
             return redirect(url_for('admin_panel'))
         else:
-            flash('ÑãÒ ÚÈæÑ ÇÔÊÈÇå ÇÓÊ.', 'danger')
+            flash('Ø±Ù…Ø² Ø¹Ø¨ÙˆØ± Ø§Ø´ØªØ¨Ø§Ù‡ Ø§Ø³Øª.', 'danger')
     return render_template('admin_login.html')
 
 @app.route('/admin', methods=['GET', 'POST'])
@@ -87,29 +95,27 @@ def admin_panel():
     if request.method == 'POST':
         action = request.form.get('action')
         
-        # ÊÛííÑ ÑãÒ ÚÈæÑ
         if action == 'change_pass':
             new_pass = request.form.get('new_password', '').strip()
             if len(new_pass) >= 4:
                 with open(PASS_FILE, 'w') as f:
                     f.write(new_pass)
-                flash('ÑãÒ ÚÈæÑ ÈÇ ãæİŞíÊ ÊÛííÑ ˜ÑÏ.', 'success')
+                flash('Ø±Ù…Ø² Ø¹Ø¨ÙˆØ± Ø¨Ø§ Ù…ÙˆÙÙ‚ÛŒØª ØªØºÛŒÛŒØ± Ú©Ø±Ø¯.', 'success')
             else:
-                flash('ÑãÒ ÚÈæÑ ÈÇíÏ ÍÏÇŞá 4 ˜ÇÑÇ˜ÊÑ ÈÇÔÏ.', 'danger')
+                flash('Ø±Ù…Ø² Ø¹Ø¨ÙˆØ± Ø¨Ø§ÛŒØ¯ Ø­Ø¯Ø§Ù‚Ù„ 4 Ú©Ø§Ø±Ø§Ú©ØªØ± Ø¨Ø§Ø´Ø¯.', 'danger')
                 
-        # ÂáæÏ İÇíá Ç˜Óá
         elif action == 'upload_excel':
             if 'excel_file' not in request.files:
-                flash('İÇíáí ÇäÊÎÇÈ äÔÏå ÇÓÊ.', 'danger')
+                flash('ÙØ§ÛŒÙ„ÛŒ Ø§Ù†ØªØ®Ø§Ø¨ Ù†Ø´Ø¯Ù‡ Ø§Ø³Øª.', 'danger')
             else:
                 file = request.files['excel_file']
                 if file.filename == '':
-                    flash('İÇíáí ÇäÊÎÇÈ äÔÏå ÇÓÊ.', 'danger')
+                    flash('ÙØ§ÛŒÙ„ÛŒ Ø§Ù†ØªØ®Ø§Ø¨ Ù†Ø´Ø¯Ù‡ Ø§Ø³Øª.', 'danger')
                 elif file and (file.filename.endswith('.xlsx') or file.filename.endswith('.xls')):
                     file.save(get_excel_path())
-                    flash('İÇíá Ç˜Óá ÈÇ ãæİŞíÊ ÂáæÏ æ ÌÇíÒíä ÔÏ.', 'success')
+                    flash('ÙØ§ÛŒÙ„ Ø§Ú©Ø³Ù„ Ø¨Ø§ Ù…ÙˆÙÙ‚ÛŒØª Ø¢Ù¾Ù„ÙˆØ¯ Ùˆ Ø¬Ø§ÛŒÚ¯Ø²ÛŒÙ† Ø´Ø¯.', 'success')
                 else:
-                    flash('İŞØ İÑãÊ Ç˜Óá (.xlsx íÇ .xls) ãÌÇÒ ÇÓÊ.', 'danger')
+                    flash('ÙÙ‚Ø· ÙØ±Ù…Øª Ø§Ú©Ø³Ù„ (.xlsx ÛŒØ§ .xls) Ù…Ø¬Ø§Ø² Ø§Ø³Øª.', 'danger')
                     
         return redirect(url_for('admin_panel'))
         
