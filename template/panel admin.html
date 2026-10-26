@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>پنل مدیریت</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <style>body { font-family: 'Vazirmatn', sans-serif; background-color: #f4f6f9; }</style>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="fw-bold">پنل مدیریت سیستم</h3>
+                    <div>
+                        <a href="/" class="btn btn-outline-secondary btn-sm">مشاهده سایت</a>
+                        <a href="/admin/logout" class="btn btn-outline-danger btn-sm">خروج</a>
+                    </div>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}{% for cat, msg in messages %}
+                        <div class="alert alert-{{ cat }} text-center">{{ msg }}</div>
+                    {% endfor %}{% endif %}
+                {% endwith %}
+
+                <!-- آپلود فایل اکسل -->
+                <div class="card p-4 mb-4 shadow-sm border-0 rounded-4">
+                    <h5 class="fw-bold mb-3 text-success">بارگذاری فایل اکسل</h5>
+                    <form method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="action" value="upload_excel">
+                        <div class="mb-3">
+                            <input class="form-control" type="file" name="excel_file" accept=".xlsx, .xls" required>
+                            <div class="form-text">فایل باید دارای ستون‌های: کد پرسنلی، نام، نام خانوادگی، ساعت محاسبه شده، ساعت ماهانه حق التدریس، نرخ حق التدریس، مقدار حق التدریس، خالص پرداختی باشد.</div>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">آپلود و جایگزین کردن</button>
+                    </form>
+                </div>
+
+                <!-- تغییر رمز عبور -->
+                <div class="card p-4 shadow-sm border-0 rounded-4">
+                    <h5 class="fw-bold mb-3 text-primary">تغییر رمز عبور پنل</h5>
+                    <form method="POST">
+                        <input type="hidden" name="action" value="change_pass">
+                        <div class="mb-3">
+                            <input type="password" class="form-control" name="new_password" placeholder="رمز عبور جدید" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">به‌روزرسانی رمز عبور</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

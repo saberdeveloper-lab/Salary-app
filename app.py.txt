@@ -1,0 +1,124 @@
+import os
+from flask import Flask, render_template, request, redirect, url_for, session, flash
+import pandas as pd
+
+app = Flask(__name__)
+app.secret_key = 'teacher-salary-secret-key-12345'
+
+UPLOAD_FOLDER = 'uploads'
+EXCEL_FILENAME = 'salary_data.xlsx'
+PASS_FILE = 'password.txt'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+#  ‰ŸÌ„ —„“ «Ê·ÌÂ «ê— ÊÃÊœ ‰œ«‘ 
+if not os.path.exists(PASS_FILE):
+    with open(PASS_FILE, 'w') as f:
+        f.write('Saber456519')
+
+def get_password():
+    with open(PASS_FILE, 'r') as f:
+        return f.read().strip()
+
+def get_excel_path():
+    return os.path.join(app.config['UPLOAD_FOLDER'], EXCEL_FILENAME)
+
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    result = None
+    error = None
+    search_code = None
+    
+    if request.method == 'POST':
+        search_code = request.form.get('personnel_code', '').strip()
+        excel_path = get_excel_path()
+        
+        if not os.path.exists(excel_path):
+            error = "Â‰Ê“ ›«Ì· «ÿ·«⁄«   Ê”ÿ „œÌ—Ì  »«—ê–«—Ì ‰‘œÂ «” ."
+        elif not search_code:
+            error = "·ÿ›« òœ Å—”‰·Ì —« Ê«—œ ò‰Ìœ."
+        else:
+            try:
+                df = pd.read_excel(excel_path)
+                # Å«ò”«“Ì ‰«„ ” Ê‰ùÂ« «“ ›«’·ÂùÂ«Ì «÷«›Ì «Õ „«·Ì
+                df.columns = df.columns.str.strip()
+                
+                if 'òœ Å—”‰·Ì' not in df.columns:
+                    error = "” Ê‰ 'òœ Å—”‰·Ì' œ— ›«Ì· «ò”· Ì«›  ‰‘œ. ·ÿ›« ›«Ì· —« »——”Ì ò‰Ìœ."
+                else:
+                    df['òœ Å—”‰·Ì'] = df['òœ Å—”‰·Ì'].astype(str).str.strip()
+                    row = df[df['òœ Å—”‰·Ì'] == search_code]
+                    
+                    if row.empty:
+                        error = "òœ Å—”‰·Ì „Ê—œ ‰Ÿ— Ì«›  ‰‘œ."
+                    else:
+                        r = row.iloc[0].to_dict()
+                        result = {
+                            '‰«„': r.get('‰«„', '‰«„‘Œ’'),
+                            '‰«„_Œ«‰Ê«œêÌ': r.get('‰«„ Œ«‰Ê«œêÌ', '‰«„‘Œ’'),
+                            '”«⁄ _„Õ«”»Â_‘œÂ': r.get('”«⁄  „Õ«”»Â ‘œÂ', '‰«„‘Œ’'),
+                            '”«⁄ _„«Â«‰Â': r.get('”«⁄  „«Â«‰Â Õﬁ «· œ—Ì”', '‰«„‘Œ’'),
+                            '‰—Œ': r.get('‰—Œ Õﬁ «· œ—Ì”', '‰«„‘Œ’'),
+                            '„ﬁœ«—': r.get('„ﬁœ«— Õﬁ «· œ—Ì”', '‰«„‘Œ’'),
+                            'Œ«·’': r.get('Œ«·’ Å—œ«Œ Ì', '‰«„‘Œ’')
+                        }
+            except Exception as e:
+                error = f"Œÿ« œ— Å—œ«“‘ ›«Ì·: {str(e)}"
+                
+    return render_template('index.html', result=result, error=error, search_code=search_code)
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        entered_pass = request.form.get('password')
+        if entered_pass == get_password():
+            session['admin_logged'] = True
+            return redirect(url_for('admin_panel'))
+        else:
+            flash('—„“ ⁄»Ê— «‘ »«Â «” .', 'danger')
+    return render_template('admin_login.html')
+
+@app.route('/admin', methods=['GET', 'POST'])
+def admin_panel():
+    if not session.get('admin_logged'):
+        return redirect(url_for('admin_login'))
+        
+    if request.method == 'POST':
+        action = request.form.get('action')
+        
+        #  €ÌÌ— —„“ ⁄»Ê—
+        if action == 'change_pass':
+            new_pass = request.form.get('new_password', '').strip()
+            if len(new_pass) >= 4:
+                with open(PASS_FILE, 'w') as f:
+                    f.write(new_pass)
+                flash('—„“ ⁄»Ê— »« „Ê›ﬁÌ   €ÌÌ— ò—œ.', 'success')
+            else:
+                flash('—„“ ⁄»Ê— »«Ìœ Õœ«ﬁ· 4 ò«—«ò — »«‘œ.', 'danger')
+                
+        # ¬Å·Êœ ›«Ì· «ò”·
+        elif action == 'upload_excel':
+            if 'excel_file' not in request.files:
+                flash('›«Ì·Ì «‰ Œ«» ‰‘œÂ «” .', 'danger')
+            else:
+                file = request.files['excel_file']
+                if file.filename == '':
+                    flash('›«Ì·Ì «‰ Œ«» ‰‘œÂ «” .', 'danger')
+                elif file and (file.filename.endswith('.xlsx') or file.filename.endswith('.xls')):
+                    file.save(get_excel_path())
+                    flash('›«Ì· «ò”· »« „Ê›ﬁÌ  ¬Å·Êœ Ê Ã«Ìê“Ì‰ ‘œ.', 'success')
+                else:
+                    flash('›ﬁÿ ›—„  «ò”· (.xlsx Ì« .xls) „Ã«“ «” .', 'danger')
+                    
+        return redirect(url_for('admin_panel'))
+        
+    return render_template('admin.html')
+
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('admin_logged', None)
+    return redirect(url_for('index'))
+
+if __name__ == '__main__':
+    app.run(debug=True)
