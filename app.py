@@ -3,7 +3,7 @@ import os
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import openpyxl
 
-   app = Flask(__name__, template_folder='template')
+app = Flask(__name__, template_folder='template')
 app.secret_key = 'teacher-salary-secret-key-12345'
 
 UPLOAD_FOLDER = 'uploads'
