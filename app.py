@@ -1,10 +1,14 @@
 
 import os
 from flask import Flask, render_template, request, redirect, url_for, session, flash
-import openpyxl
 
-app = Flask(__name__, template_folder='template')
-app.secret_key = 'teacher-salary-secret-key-12345'
+base_dir = os.path.abspath(os.path.dirname(__file__))
+# بررسی می‌کند آیا پوشه با نام template است یا templates
+template_dir = os.path.join(base_dir, 'template') if os.path.exists(os.path.join(base_dir, 'template')) else os.path.join(base_dir, 'templates')
+
+app = Flask(__name__, template_folder=template_dir)
+app.secret_key = 'super-secret-key-tadris'
+
 
 UPLOAD_FOLDER = 'uploads'
 EXCEL_FILENAME = 'salary_data.xlsx'
