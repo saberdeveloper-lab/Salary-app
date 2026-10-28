@@ -4,73 +4,135 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>سامانه استعلام حق‌التدریس</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
-    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <!-- Bootstrap RTL CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <!-- فونت وزیرمتن -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
     <style>
-        body { font-family: 'Vazirmatn', sans-serif; background-color: #f4f6f9; }
-        .card { border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        body {
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            background-color: #f4f6f9;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .main-card {
+            border-radius: 12px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+            border: none;
+        }
+        .card-header-custom {
+            background-color: #0d6efd;
+            color: #fff;
+            border-radius: 12px 12px 0 0 !important;
+            padding: 1.2rem;
+        }
+        .month-badge {
+            background-color: #e7f1ff;
+            color: #0c63e4;
+            font-size: 1.25rem;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            display: inline-block;
+            font-weight: 700;
+            border: 1px solid #b6d4fe;
+        }
     </style>
 </head>
 <body>
-    <div class="container py-5">
-        <div class="row justify-content-center">
-            <div class="col-md-7">
-                <div class="text-center mb-4">
-                    <h2 class="fw-bold text-primary">سامانه استعلام حق‌التدریس</h2>
-                    <p class="text-muted">لطفاً جهت مشاهده اطلاعات، کد پرسنلی خود را وارد کنید.</p>
-                </div>
 
-                <div class="card p-4 mb-4">
-                    <form method="POST">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">سامانه حق‌التدریس</a>
+        <div class="d-flex">
+            <a href="{{ url_for('admin_login') }}" class="btn btn-outline-light btn-sm">ورود به پنل مدیریت</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container my-auto py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card main-card">
+                <div class="card-header card-header-custom text-center">
+                    <h5 class="mb-0 fw-bold">استعلام حق‌التدریس اساتید</h5>
+                </div>
+                <div class="card-body p-4">
+                    <!-- فرم جستجو -->
+                    <form method="POST" action="{{ url_for('index') }}" class="mb-4">
                         <div class="mb-3">
-                            <label for="personnel_code" class="form-label fw-bold">کد پرسنلی:</label>
-                            <input type="text" class="form-control form-control-lg" id="personnel_code" name="personnel_code" value="{{ search_code or '' }}" placeholder="مثال: 140201" required>
+                            <label for="personnel_code" class="form-label fw-bold">کد پرسنلی خود را وارد کنید:</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control text-center" id="personnel_code" name="personnel_code" 
+                                       value="{{ search_code if search_code else '' }}" placeholder="مثال: 12345" required>
+                                <button type="submit" class="btn btn-primary px-4 fw-bold">جستجو</button>
+                            </div>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100 btn-lg">استعلام اطلاعات</button>
                     </form>
-                </div>
 
-                {% if error %}
-                    <div class="alert alert-danger text-center" role="alert">{{ error }}</div>
-                {% endif %}
+                    <!-- پیام خطا -->
+                    {% if error %}
+                        <div class="alert alert-danger text-center mb-0" role="alert">
+                            {{ error }}
+                        </div>
+                    {% endif %}
 
-                {% if result %}
-                    <div class="card p-4 border-success">
-                        <h4 class="text-success mb-3 text-center border-bottom pb-2">مشخصات حق‌التدریس</h4>
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span class="text-muted">نام و نام خانوادگی:</span>
-                                <span class="fw-bold fs-6">{{ result.نام }} {{ result.نام_خانوادگی }}</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span class="text-muted">ساعت محاسبه شده:</span>
-                                <span class="fw-bold">{{ result.ساعت_محاسبه_شده }}</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span class="text-muted">ساعت ماهانه حق التدریس:</span>
-                                <span class="fw-bold">{{ result.ساعت_ماهانه }}</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span class="text-muted">نرخ حق التدریس:</span>
-                                <span class="fw-bold">{{ result.نرخ }}</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span class="text-muted">مقدار حق التدریس:</span>
-                                <span class="fw-bold">{{ result.مقدار }}</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
-                                <span class="text-dark fw-bold">خالص پرداختی:</span>
-                                <span class="fw-bold fs-4 text-success">{{ result.خالص }}</span>
-                            </li>
-                        </ul>
-                    </div>
-                {% endif %}
+                    <!-- نتیجه جستجو -->
+                    {% if result %}
+                        <div class="border-top pt-4">
+                            <!-- عنوان دوره / ماه -->
+                            <div class="text-center mb-4">
+                                <span class="month-badge">
+                                    {{ result.عنوان_حق_التدریس }}
+                                </span>
+                            </div>
 
-                <div class="text-center mt-4">
-                    <a href="/admin" class="text-decoration-none text-muted small">ورود به پنل مدیریت</a>
+                            <!-- جدول اطلاعات -->
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped align-middle mb-0">
+                                    <tbody>
+                                        <tr>
+                                            <th class="table-light w-50">نام و نام خانوادگی</th>
+                                            <td class="fw-bold">{{ result.نام }} {{ result.نام_خانوادگی }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th class="table-light">ماه</th>
+                                            <td>{{ result.ماه }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th class="table-light">ساعت محاسبه‌شده</th>
+                                            <td>{{ result.ساعت_محاسبه_شده }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th class="table-light">ساعت ماهانه حق‌التدریس</th>
+                                            <td>{{ result.ساعت_ماهانه }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th class="table-light">نرخ حق‌التدریس (ریال)</th>
+                                            <td>{{ result.نرخ }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th class="table-light">مقدار حق‌التدریس (ریال)</th>
+                                            <td>{{ result.مقدار }}</td>
+                                        </tr>
+                                        <tr class="table-success">
+                                            <th class="fw-bold text-success">خالص پرداختی (ریال)</th>
+                                            <td class="fw-bold text-success fs-5">{{ result.خالص }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
+</div>
+
+<footer class="bg-white text-center py-3 border-top mt-auto">
+    <small class="text-muted">سامانه محاسبه و استعلام حق‌التدریس</small>
+</footer>
+
 </body>
 </html>
