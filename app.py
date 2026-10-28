@@ -41,6 +41,18 @@ PERSIAN_MONTHS = {
     '12': 'اسفند'
 }
 
+def format_money(val):
+    if val is None or str(val).strip() == '':
+        return 'نامشخص'
+    val_str = str(val).strip().replace(',', '')
+    try:
+        # حذف اعشار و سه‌رقم‌سه‌رقم جدا کردن عدد
+        num = int(round(float(val_str)))
+        return f"{num:,}"
+    except (ValueError, TypeError):
+        return str(val)
+
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     result = None
