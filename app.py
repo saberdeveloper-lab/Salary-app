@@ -41,6 +41,15 @@ PERSIAN_MONTHS = {
     '12': 'اسفند'
 }
 
+def to_persian_digits(text):
+    if text is None:
+        return 'نامشخص'
+    en_to_fa = {'0':'۰', '1':'۱', '2':'۲', '3':'۳', '4':'۴', '5':'۵', '6':'۶', '7':'۷', '8':'۸', '9':'۹'}
+    res = str(text)
+    for en, fa in en_to_fa.items():
+        res = res.replace(en, fa)
+    return res
+
 def format_money(val):
     if val is None or str(val).strip() == '':
         return 'نامشخص'
@@ -48,9 +57,10 @@ def format_money(val):
     try:
         # حذف اعشار و سه‌رقم‌سه‌رقم جدا کردن عدد
         num = int(round(float(val_str)))
-        return f"{num:,}"
+        formatted = f"{num:,}"
+        return to_persian_digits(formatted)
     except (ValueError, TypeError):
-        return str(val)
+        return to_persian_digits(str(val))
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -115,8 +125,8 @@ def index():
                                 'نام_خانوادگی': row_dict.get('نام خانوادگی', 'نامشخص'),
                                 'ماه': month_name if month_name else 'ثبت نشده',
                                 'عنوان_حق_التدریس': title,
-                                'ساعت_محاسبه_شده': row_dict.get('ساعت محاسبه شده', 'نامشخص'),
-                                'ساعت_ماهانه': row_dict.get('ساعت ماهانه حق التدریس', 'نامشخص'),
+                                'ساعت_محاسبه_شده': to_persian_digits(row_dict.get('ساعت محاسبه شده', 'نامشخص')),
+                                'ساعت_ماهانه': to_persian_digits(row_dict.get('ساعت ماهانه حق التدریس', 'نامشخص')),
                                 'نرخ': format_money(row_dict.get('نرخ حق التدریس')),
                                 'مقدار': format_money(row_dict.get('مقدار حق التدریس', 'نامشخص')),
                                 'خالص': format_money(row_dict.get('خالص پرداختی', 'نامشخص'))
