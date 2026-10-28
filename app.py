@@ -41,6 +41,19 @@ PERSIAN_MONTHS = {
     '12': 'اسفند'
 }
 
+def to_english_digits(text):
+    if not text:
+        return ''
+    fa_to_en = {'۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4', '۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9'}
+    ar_to_en = {'٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9'}
+    res = str(text).strip()
+    for fa, en in fa_to_en.items():
+        res = res.replace(fa, en)
+    for ar, en in ar_to_en.items():
+        res = res.replace(ar, en)
+    return res
+
+
 def to_persian_digits(text):
     if text is None:
         return 'نامشخص'
@@ -70,7 +83,7 @@ def index():
     search_code = None
     
     if request.method == 'POST':
-        search_code = request.form.get('personnel_code', '').strip()
+        search_code = to_english_digits(request.form.get('personnel_code', ''))
         excel_path = get_excel_path()
         
         if not os.path.exists(excel_path):
@@ -102,7 +115,7 @@ def index():
 
                     for row in sheet.iter_rows(min_row=2, values_only=True):
                         row_dict = {headers[i]: (row[i] if i < len(row) and row[i] is not None else '') for i in range(len(headers))}
-                        current_code = str(row_dict.get('کد پرسنلی', '')).strip()
+                        current_code = to_english_digits(row_dict.get('کد پرسنلی', ''))
                         if current_code.endswith('.0'):
                             current_code = current_code[:-2]
                             
