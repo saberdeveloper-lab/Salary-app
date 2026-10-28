@@ -117,7 +117,7 @@ def index():
                                 'عنوان_حق_التدریس': title,
                                 'ساعت_محاسبه_شده': row_dict.get('ساعت محاسبه شده', 'نامشخص'),
                                 'ساعت_ماهانه': row_dict.get('ساعت ماهانه حق التدریس', 'نامشخص'),
-                                'نرخ': str(int(float(format_money((row_dict.get('نرخ حق التدریس', '')).replace(',', '')))) if str(row_dict.get('نرخ حق التدریس', '')).strip().replace('.', '', 1).replace(',', '').isdigit() else row_dict.get('نرخ حق التدریس', 'نامشخص')),
+                                'نرخ': format_money(row_dict.get('نرخ حق التدریس')),
                                 'مقدار': format_money(row_dict.get('مقدار حق التدریس', 'نامشخص')),
                                 'خالص': format_money(row_dict.get('خالص پرداختی', 'نامشخص'))
                             }
