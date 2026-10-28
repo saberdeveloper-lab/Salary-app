@@ -1,15 +1,12 @@
-
 import os
 import openpyxl
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 
 base_dir = os.path.abspath(os.path.dirname(__file__))
-# بررسی می‌کند آیا پوشه با نام template است یا templates
 template_dir = os.path.join(base_dir, 'template') if os.path.exists(os.path.join(base_dir, 'template')) else os.path.join(base_dir, 'templates')
 
 app = Flask(__name__, template_folder=template_dir)
 app.secret_key = 'super-secret-key-tadris'
-
 
 UPLOAD_FOLDER = 'uploads'
 EXCEL_FILENAME = 'salary_data.xlsx'
@@ -19,11 +16,11 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 if not os.path.exists(PASS_FILE):
-    with open(PASS_FILE, 'w') as f:
+    with open(PASS_FILE, 'w', encoding='utf-8') as f:
         f.write('Saber456519')
 
 def get_password():
-    with open(PASS_FILE, 'r') as f:
+    with open(PASS_FILE, 'r', encoding='utf-8') as f:
         return f.read().strip()
 
 def get_excel_path():
@@ -63,24 +60,49 @@ def index():
                 wb = openpyxl.load_workbook(excel_path, data_only=True)
                 sheet = wb.active
                 
-                # خواندن سرستون‌ها
                 headers = [str(cell.value).strip() if cell.value is not None else '' for cell in sheet[1]]
                 
                 if 'کد پرسنلی' not in headers:
                     error = "ستون 'کد پرسنلی' در فایل اکسل یافت نشد."
                 else:
                     found = False
+                    month_col_idx = None
+                    for idx, h in enumerate(headers):
+                        if h.strip() == 'ماه':
+                            month_col_idx = idx
+                            break
+
+                    default_month = ''
+                    if month_col_idx is not None:
+                        first_row = next(sheet.iter_rows(min_row=2, max_row=2, values_only=True), None)
+                        if first_row and len(first_row) > month_col_idx and first_row[month_col_idx] is not None:
+                            default_month = str(first_row[month_col_idx]).strip()
+
                     for row in sheet.iter_rows(min_row=2, values_only=True):
                         row_dict = {headers[i]: (row[i] if i < len(row) and row[i] is not None else '') for i in range(len(headers))}
                         current_code = str(row_dict.get('کد پرسنلی', '')).strip()
-                        # حذف اعشار احتمالی از کدهای عددی
                         if current_code.endswith('.0'):
                             current_code = current_code[:-2]
                             
                         if current_code == search_code:
+                            raw_val = row_dict.get('ماه', '')
+                            raw_month = str(raw_val).strip() if (raw_val is not None and str(raw_val).strip() != '') else default_month
+                            
+                            if raw_month.endswith('.0'):
+                                raw_month = raw_month[:-2]
+
+                            fa_to_en = {'۰':'0', '۱':'1', '۲':'2', '۳':'3', '۴':'4', '۵':'5', '۶':'6', '۷':'7', '۸':'8', '۹':'9'}
+                            for f, e in fa_to_en.items():
+                                raw_month = raw_month.replace(f, e)
+
+                            month_name = PERSIAN_MONTHS.get(raw_month, raw_month)
+                            title = f"حق‌التدریس {month_name}" if month_name else "حق‌التدریس"
+
                             result = {
                                 'نام': row_dict.get('نام', 'نامشخص'),
                                 'نام_خانوادگی': row_dict.get('نام خانوادگی', 'نامشخص'),
+                                'ماه': month_name if month_name else 'ثبت نشده',
+                                'عنوان_حق_التدریس': title,
                                 'ساعت_محاسبه_شده': row_dict.get('ساعت محاسبه شده', 'نامشخص'),
                                 'ساعت_ماهانه': row_dict.get('ساعت ماهانه حق التدریس', 'نامشخص'),
                                 'نرخ': row_dict.get('نرخ حق التدریس', 'نامشخص'),
@@ -118,7 +140,7 @@ def admin_panel():
         if action == 'change_pass':
             new_pass = request.form.get('new_password', '').strip()
             if len(new_pass) >= 4:
-                with open(PASS_FILE, 'w') as f:
+                with open(PASS_FILE, 'w', encoding='utf-8') as f:
                     f.write(new_pass)
                 flash('رمز عبور با موفقیت تغییر کرد.', 'success')
             else:
